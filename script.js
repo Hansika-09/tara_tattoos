@@ -68,15 +68,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const bookingModal = document.getElementById('bookingModal');
   const modalClose = document.getElementById('modalClose');
   const heroBookBtn = document.getElementById('heroBookBtn');
+  const heroHomeBookBtn = document.getElementById('heroHomeBookBtn');
   const navBookBtn = document.getElementById('navBookBtn');
   const bookingForm = document.getElementById('bookingForm');
+  const addressGroup = document.getElementById('addressGroup');
+  const addressInput = document.getElementById('address');
+  const radioStudio = document.querySelector('input[value="studio"]');
+  const radioHome = document.querySelector('input[value="home"]');
 
-  function openModal() {
+  function openModal(type = 'studio') {
     bookingModal.classList.add('active');
     document.body.style.overflow = 'hidden';
     // Set min date to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('preferredDate').setAttribute('min', today);
+    
+    if (type === 'home') {
+      if (radioHome) radioHome.checked = true;
+      if (addressGroup) addressGroup.style.display = 'block';
+      if (addressInput) addressInput.setAttribute('required', 'required');
+    } else {
+      if (radioStudio) radioStudio.checked = true;
+      if (addressGroup) addressGroup.style.display = 'none';
+      if (addressInput) addressInput.removeAttribute('required');
+    }
   }
 
   function closeModal() {
@@ -84,12 +99,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.overflow = '';
   }
 
-  heroBookBtn.addEventListener('click', openModal);
-  navBookBtn.addEventListener('click', (e) => {
+  if (heroBookBtn) heroBookBtn.addEventListener('click', () => openModal('studio'));
+  if (heroHomeBookBtn) heroHomeBookBtn.addEventListener('click', () => openModal('home'));
+  if (navBookBtn) navBookBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    openModal();
+    openModal('studio');
   });
-  modalClose.addEventListener('click', closeModal);
+  if (modalClose) modalClose.addEventListener('click', closeModal);
+
+  document.querySelectorAll('input[name="appointmentType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'home') {
+        if (addressGroup) addressGroup.style.display = 'block';
+        if (addressInput) addressInput.setAttribute('required', 'required');
+      } else {
+        if (addressGroup) addressGroup.style.display = 'none';
+        if (addressInput) addressInput.removeAttribute('required');
+      }
+    });
+  });
 
   bookingModal.addEventListener('click', (e) => {
     if (e.target === bookingModal) closeModal();
@@ -114,6 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const placement = document.getElementById('placement').value.trim();
     const size = document.getElementById('size').value.trim() || 'Not specified';
     const notes = document.getElementById('notes').value.trim() || 'None';
+    
+    const typeElement = document.querySelector('input[name="appointmentType"]:checked');
+    const appointmentType = typeElement ? typeElement.value : 'studio';
+    const addressInput = document.getElementById('address');
+    const address = addressInput ? addressInput.value.trim() : '';
 
     // Format date nicely
     const formattedDate = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-IN', {
@@ -124,7 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }) : 'Not specified';
 
     // Build WhatsApp message
-    const message = `*🔥 New Tattoo Appointment Request*
+    let message = `*🔥 New Tattoo Appointment Request*
+*Type:* ${appointmentType === 'home' ? 'Home Service (Door-to-Door)' : 'Studio Visit'}`;
+
+    if (appointmentType === 'home') {
+      message += `\n*Address:* ${address}`;
+    }
+
+    message += `
 
 *Name:* ${name}
 *Phone:* ${phone}
